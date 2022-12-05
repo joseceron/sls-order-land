@@ -3,14 +3,12 @@
 const AWS = require('aws-sdk')
 AWS.config.update({ region: 'us-east-1' })
 
-const moment = require('moment')
-const { v4: uuidv4 } = require('uuid')
 const util = require('../util.js')
 
 const dynamodb = new AWS.DynamoDB.DocumentClient()
 const tableName = process.env.BASKET_TABLE
 
-exports.handler = async (event) => {
+module.exports = async (event) => {
   try {
     let userName = util.getUserName(event.headers)
     let params = {

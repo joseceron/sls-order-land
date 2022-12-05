@@ -8,7 +8,7 @@ const util = require('../util.js')
 const dynamodb = new AWS.DynamoDB.DocumentClient()
 const tableName = process.env.PRODUCT_TABLE
 
-exports.handler = async (event) => {
+module.exports = async (event) => {
   try {
     let productId = event.pathParameters.productId
     const timestamp = JSON.parse(event.body).timestamp

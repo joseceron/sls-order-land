@@ -2,6 +2,7 @@ service: sls-order-land
 
 plugins:
   - serverless-offline
+  - serverless-lift
 
 custom:
   allowedHeaders:
@@ -29,6 +30,7 @@ provider:
   environment:
     PRODUCT_TABLE: ${self:service}-${opt:stage, self:provider.stage}-product
     BASKET_TABLE: ${self:service}-${opt:stage, self:provider.stage}-basket
+    ORDER_TABLE: ${self:service}-${opt:stage, self:provider.stage}-order
   iamRoleStatements:
     - Effect: Allow
       Action: 
@@ -36,10 +38,28 @@ provider:
         - dynamodb:PutItem
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PRODUCT_TABLE}"
+    - Effect: Allow
+      Action: 
+        - dynamodb:Query
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.BASKET_TABLE}"
+    - Effect: Allow
+      Action: 
+        - dynamodb:Query
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.ORDER_TABLE}"
+
+constructs:
+  jobs:
+    type: queue
+    worker:
+      handler: api/ordering/index.consumer
 
 functions:
   add-product:
-    handler: api/products/add-product.handler
+    handler: api/products/index.add
     description: POST /product
     events:
       - http:
@@ -49,7 +69,7 @@ functions:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
   delete-product:
-    handler: api/products/delete-product.handler
+    handler: api/products/index.del
     description: DELETE product
     events:
       - http:
@@ -59,7 +79,7 @@ functions:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
   get-product:
-    handler: api/products/get-product.handler
+    handler: api/products/index.getProduct
     description: GET product/{productId}
     events:
       - http:
@@ -69,7 +89,7 @@ functions:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
   get-products:
-    handler: api/products/get-products.handler
+    handler: api/products/index.getProducts
     description: GET products
     events:
       - http:
@@ -79,7 +99,7 @@ functions:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
   update-product:
-    handler: api/products/update-product.handler
+    handler: api/products/index.update
     description: PATCH /product
     events:
       - http:
@@ -89,7 +109,7 @@ functions:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
   add-basket:
-    handler: api/basket/add-basket.handler
+    handler: api/basket/index.add
     description: POST /basket
     events:
       - http:
@@ -99,7 +119,7 @@ functions:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
   checkout-basket:
-    handler: api/basket/checkout-basket.handler
+    handler: api/basket/index.checkout
     description: POST /basket/checkout
     events:
       - http:
@@ -108,8 +128,10 @@ functions:
           cors:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
+    environment:
+      QUEUE_URL: ${construct:jobs.queueUrl}
   delete-basket:
-    handler: api/basket/delete-basket.handler
+    handler: api/basket/index.del
     description: DELETE basket
     events:
       - http:
@@ -119,7 +141,7 @@ functions:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
   get-basket:
-    handler: api/basket/get-basket.handler
+    handler: api/basket/index.get
     description: GET basket
     events:
       - http:
@@ -128,7 +150,27 @@ functions:
           cors:
             origin: '*'
             headers: ${self.custom.allowedHeaders}
-
+  get-order:
+    handler: api/ordering/index.getOrder
+    description: GET order
+    events:
+      - http:
+          path: order
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  get-orders:
+    handler: api/ordering/index.getOrders
+    description: GET orders
+    events:
+      - http:
+          path: orders
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  
 resources:
   Resources:
     ProductTable:
@@ -163,4 +205,21 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-
+    OrderTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.ORDER_TABLE}
+        AttributeDefinitions:
+          - AttributeName: userName
+            AttributeType: S
+          - AttributeName: orderDate
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userName
+            KeyType: HASH
+          - AttributeName: orderDate
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

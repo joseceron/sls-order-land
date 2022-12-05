@@ -16,6 +16,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "serverless-lift": "^1.21.0",
     "serverless-offline": "^12.0.0"
   }
 }

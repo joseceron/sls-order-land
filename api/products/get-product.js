@@ -9,7 +9,7 @@ const _ = require('underscore')
 const dynamodb = new AWS.DynamoDB.DocumentClient()
 const tableName = process.env.PRODUCT_TABLE
 
-exports.handler = async (event) => {
+module.exports = async (event) => {
   try {
     const productId = decodeURIComponent(event.pathParameters.productId)
     console.log('productId: ', productId)

@@ -1,13 +1,10 @@
-// Route: POST /product
-
 const AWS = require('aws-sdk')
 AWS.config.update({ region: 'us-east-1' })
 
 const _ = require('underscore')
-const util = require('../util.js')
-
 const dynamodb = new AWS.DynamoDB.DocumentClient()
-const tableName = process.env.BASKET_TABLE
+const tableName = process.env.ORDER_TABLE
+const util = require('../util.js')
 
 module.exports = async (event) => {
   try {

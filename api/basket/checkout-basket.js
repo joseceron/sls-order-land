@@ -2,16 +2,16 @@
 
 const AWS = require('aws-sdk')
 AWS.config.update({ region: 'us-east-1' })
-
-const _ = require('underscore')
-const moment = require('moment')
-const { v4: uuidv4 } = require('uuid')
-const util = require('../util.js')
+const sqs = new AWS.SQS();
 
 const dynamodb = new AWS.DynamoDB.DocumentClient()
 const tableName = process.env.BASKET_TABLE
 
-exports.handler = async (event) => {
+const _ = require('underscore')
+const util = require('../util.js')
+const deleteBasket = require('./delete-basket')
+
+module.exports = async (event) => {
   try {
     let userName = util.getUserName(event.headers)
     const checkoutRequest = JSON.parse(event.body)
@@ -30,6 +30,13 @@ exports.handler = async (event) => {
     // calculate totalprice, prepare order create json data to send ordering ms 
     var checkoutPayload = prepareOrderPayload(checkoutRequest, basket);
     
+    console.log('QUEUE_URL: ',  process.env.QUEUE_URL)
+    // 3- publish an event to eventbridge - this will subscribe by order microservice and start ordering process.
+    await publishCheckoutBasketEvent(checkoutPayload)
+
+    // 4- remove existing basket
+    await deleteBasket(event);
+
     return {
       statusCode: 200,
       headers: util.getResponseHeaders(),
@@ -89,7 +96,6 @@ const prepareOrderPayload = (checkoutRequest, basket) => {
       let totalPrice = 0;
       basket.items.forEach(item => totalPrice = totalPrice + item.price);
       checkoutRequest.totalPrice = totalPrice;
-      console.log(checkoutRequest);
   
       // copies all properties from basket into checkoutRequest
       Object.assign(checkoutRequest, basket);
@@ -100,4 +106,18 @@ const prepareOrderPayload = (checkoutRequest, basket) => {
       console.error(e);
       throw e;
   }    
+}
+
+const publishCheckoutBasketEvent = async (checkoutPayload) => {
+  await sqs.sendMessage({
+    QueueUrl: `https://sqs.us-east-1.amazonaws.com/656113873765/sls-order-land-dev-jobs`,
+    // QueueUrl: process.env.QUEUE_URL, //prod
+    MessageBody: JSON.stringify(checkoutPayload),
+    MessageAttributes: {
+      AttributeName: {
+        StringValue: "Attribute Value",
+        DataType: "String",
+      },
+    },
+  }).promise()
 }
