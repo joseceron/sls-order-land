@@ -1,114 +1,166 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
 service: sls-order-land
-# app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
 
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
+plugins:
+  - serverless-offline
+
+custom:
+  allowedHeaders:
+    - Accept
+    - Content-Type
+    - Content-Length
+    - Authorization
+    - X-Amz-Date
+    - X-Api-Key
+    - X-Amz-Security-Token
+    - X-Amz-User-Agent
+    - app_user_id
+    - app_user_name
+
 frameworkVersion: '3'
 
 provider:
   name: aws
   runtime: nodejs12.x
-
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
-
-# you can add statements to the Lambda function's IAM Role here
-#  iam:
-#    role:
-#      statements:
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:ListBucket"
-#          Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:PutObject"
-#          Resource:
-#            Fn::Join:
-#              - ""
-#              - - "arn:aws:s3:::"
-#                - "Ref" : "ServerlessDeploymentBucket"
-#                - "/*"
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
-
-# you can add packaging information here
-#package:
-#  patterns:
-#    - '!exclude-me.js'
-#    - '!exclude-me-dir/**'
-#    - include-me.js
-#    - include-me-dir/**
+  region: us-east-1
+  stage: dev
+  memorySize: 128
+  timeout: 5
+  endpointType: REGIONAL
+  environment:
+    PRODUCT_TABLE: ${self:service}-${opt:stage, self:provider.stage}-product
+    BASKET_TABLE: ${self:service}-${opt:stage, self:provider.stage}-basket
+  iamRoleStatements:
+    - Effect: Allow
+      Action: 
+        - dynamodb:Query
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PRODUCT_TABLE}"
 
 functions:
-  hello:
-    handler: handler.hello
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - httpApi:
-#          path: /users/create
-#          method: get
-#      - websocket: $connect
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
-#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
-#      - alb:
-#          listenerArn: arn:aws:elasticloadbalancing:us-east-1:XXXXXX:listener/app/my-load-balancer/50dc6c495c0c9188/
-#          priority: 1
-#          conditions:
-#            host: example.com
-#            path: /hello
+  add-product:
+    handler: api/products/add-product.handler
+    description: POST /product
+    events:
+      - http:
+          path: product
+          method: post
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  delete-product:
+    handler: api/products/delete-product.handler
+    description: DELETE product
+    events:
+      - http:
+          path: product/{productId}
+          method: delete
+          cors: 
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  get-product:
+    handler: api/products/get-product.handler
+    description: GET product/{productId}
+    events:
+      - http:
+          path: product/{productId}
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  get-products:
+    handler: api/products/get-products.handler
+    description: GET products
+    events:
+      - http:
+          path: products
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  update-product:
+    handler: api/products/update-product.handler
+    description: PATCH /product
+    events:
+      - http:
+          path: product
+          method: patch
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  add-basket:
+    handler: api/basket/add-basket.handler
+    description: POST /basket
+    events:
+      - http:
+          path: basket
+          method: post
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  checkout-basket:
+    handler: api/basket/checkout-basket.handler
+    description: POST /basket/checkout
+    events:
+      - http:
+          path: basket/checkout
+          method: post
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  delete-basket:
+    handler: api/basket/delete-basket.handler
+    description: DELETE basket
+    events:
+      - http:
+          path: basket
+          method: delete
+          cors: 
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
+  get-basket:
+    handler: api/basket/get-basket.handler
+    description: GET basket
+    events:
+      - http:
+          path: basket
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self.custom.allowedHeaders}
 
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
+resources:
+  Resources:
+    ProductTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.PRODUCT_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    BasketTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.BASKET_TABLE}
+        AttributeDefinitions:
+          - AttributeName: userName
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userName
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
 
-# you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
