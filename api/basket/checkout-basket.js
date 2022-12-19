@@ -4,6 +4,9 @@ const AWS = require('aws-sdk')
 AWS.config.update({ region: 'us-east-1' })
 const sqs = new AWS.SQS();
 
+const { EventBridgeClient, PutEventsCommand } = require('@aws-sdk/client-eventbridge')
+const ebClient = new EventBridgeClient({ region: 'us-east-1'})
+
 const dynamodb = new AWS.DynamoDB.DocumentClient()
 const tableName = process.env.BASKET_TABLE
 
@@ -32,7 +35,9 @@ module.exports = async (event) => {
     
     console.log('QUEUE_URL: ',  process.env.QUEUE_URL)
     // 3- publish an event to eventbridge - this will subscribe by order microservice and start ordering process.
-    await publishCheckoutBasketEvent(checkoutPayload)
+    // await sendCheckoutBasketSQS(checkoutPayload)
+    const resEvent = await publishCheckoutBasketEvent(checkoutPayload)
+    console.log('resEvent: ', resEvent)
 
     // 4- remove existing basket
     await deleteBasket(event);
@@ -109,6 +114,33 @@ const prepareOrderPayload = (checkoutRequest, basket) => {
 }
 
 const publishCheckoutBasketEvent = async (checkoutPayload) => {
+  console.log("publishCheckoutBasketEvent with payload :", checkoutPayload);
+  try {
+      // eventbridge parameters for setting event to target system
+      const params = {
+          Entries: [
+              {
+                  Source: 'com.sls.basket.checkoutbasket',
+                  Detail: JSON.stringify(checkoutPayload),
+                  DetailType: 'CheckoutBasket',
+                  Resources: [ ],
+                  EventBusName: 'sls-event-bus'
+              },
+          ],
+      };
+   
+      const data = await ebClient.send(new PutEventsCommand(params));
+  
+      console.log("Success, event sent; requestID:", data);
+      return data;
+  
+    } catch(e) {
+      console.error(e);
+      throw e;
+  }
+}
+
+const sendCheckoutBasketSQS = async (checkoutPayload) => {
   await sqs.sendMessage({
     QueueUrl: `https://sqs.us-east-1.amazonaws.com/656113873765/sls-order-land-dev-jobs`,
     // QueueUrl: process.env.QUEUE_URL, //prod

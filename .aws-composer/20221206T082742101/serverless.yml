@@ -27,7 +27,6 @@ provider:
     PRODUCT_TABLE: ${self:service}-${opt:stage, self:provider.stage}-product
     BASKET_TABLE: ${self:service}-${opt:stage, self:provider.stage}-basket
     ORDER_TABLE: ${self:service}-${opt:stage, self:provider.stage}-order
-    COGNITO_IDENTITY_POOL_ID: us-east-1:1dc61573-21a6-4f0a-b14f-dc122b292f39
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -53,26 +52,6 @@ constructs:
     worker:
       handler: api/ordering/index.consumer
 functions:
-  authenticate-google:
-    handler: api/authenticate-google.handler
-    description: Google IDP Authentication
-    events:
-      - http:
-          path: auth
-          method: get
-          cors:
-            origin: '*'
-            headers: ${self:custom.allowedHeaders}
-  basket-bridge:
-    handler: api/bridge.handler
-    events:
-      - eventBridge:
-          eventBus: sls-event-bus
-          pattern: 
-            source:
-              - com.sls.basket.checkoutbasket
-            detail-type:
-              - CheckoutBasket
   add-product:
     handler: api/products/index.add
     description: POST /product
@@ -82,7 +61,7 @@ functions:
           method: post
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   delete-product:
     handler: api/products/index.del
     description: DELETE product
@@ -92,7 +71,7 @@ functions:
           method: delete
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   get-product:
     handler: api/products/index.getProduct
     description: GET product/{productId}
@@ -102,7 +81,7 @@ functions:
           method: get
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   get-products:
     handler: api/products/index.getProducts
     description: GET products
@@ -112,7 +91,7 @@ functions:
           method: get
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   update-product:
     handler: api/products/index.update
     description: PATCH /product
@@ -122,7 +101,7 @@ functions:
           method: patch
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   add-basket:
     handler: api/basket/index.add
     description: POST /basket
@@ -130,11 +109,9 @@ functions:
       - http:
           path: basket
           method: post
-          authorizer:
-            type: aws_iam
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   checkout-basket:
     handler: api/basket/index.checkout
     description: POST /basket/checkout
@@ -144,7 +121,7 @@ functions:
           method: post
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
     environment:
       QUEUE_URL: ${construct:jobs.queueUrl}
   delete-basket:
@@ -156,7 +133,7 @@ functions:
           method: delete
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   get-basket:
     handler: api/basket/index.get
     description: GET basket
@@ -166,7 +143,7 @@ functions:
           method: get
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   get-order:
     handler: api/ordering/index.getOrder
     description: GET order
@@ -176,7 +153,7 @@ functions:
           method: get
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
   get-orders:
     handler: api/ordering/index.getOrders
     description: GET orders
@@ -186,7 +163,7 @@ functions:
           method: get
           cors:
             origin: '*'
-            headers: ${self:custom.allowedHeaders}
+            headers: ${self.custom.allowedHeaders}
 resources:
   Resources:
     ProductTable:
@@ -239,12 +216,3 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-    GatewayResponseDefault4XX:
-      Type: AWS::ApiGateway::GatewayResponse
-      Properties:
-        ResponseParameters:
-          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
-          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
-        ResponseType: DEFAULT_4XX
-        RestApiId: 
-          Ref: 'ApiGatewayRestApi'
