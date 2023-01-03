@@ -17,7 +17,7 @@ custom:
 frameworkVersion: '3'
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   region: us-east-1
   stage: dev
   memorySize: 128
@@ -34,6 +34,7 @@ provider:
         - dynamodb:Query
         - dynamodb:PutItem
         - dynamodb:DeleteItem
+        - dynamodb:Scan
       Resource: arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PRODUCT_TABLE}
     - Effect: Allow
       Action:
@@ -46,7 +47,12 @@ provider:
         - dynamodb:Query
         - dynamodb:PutItem
         - dynamodb:DeleteItem
+        - dynamodb:Scan
       Resource: arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.ORDER_TABLE}
+    - Effect: Allow
+      Action:
+        - events:PutEvents
+      Resource: arn:aws:events:us-east-1:656113873765:event-bus/sls-event-bus
 constructs:
   jobs:
     type: queue
@@ -110,6 +116,8 @@ functions:
       - http:
           path: products
           method: get
+          authorizer:
+            type: aws_iam
           cors:
             origin: '*'
             headers: ${self:custom.allowedHeaders}
@@ -123,6 +131,16 @@ functions:
           cors:
             origin: '*'
             headers: ${self:custom.allowedHeaders}
+  get-basket:
+    handler: api/basket/index.getBasket
+    description: GET /basket
+    events:
+      - http:
+          path: basket
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowedHeaders}
   add-basket:
     handler: api/basket/index.add
     description: POST /basket
@@ -130,23 +148,9 @@ functions:
       - http:
           path: basket
           method: post
-          authorizer:
-            type: aws_iam
           cors:
             origin: '*'
             headers: ${self:custom.allowedHeaders}
-  checkout-basket:
-    handler: api/basket/index.checkout
-    description: POST /basket/checkout
-    events:
-      - http:
-          path: basket/checkout
-          method: post
-          cors:
-            origin: '*'
-            headers: ${self:custom.allowedHeaders}
-    environment:
-      QUEUE_URL: ${construct:jobs.queueUrl}
   delete-basket:
     handler: api/basket/index.del
     description: DELETE basket
@@ -157,16 +161,18 @@ functions:
           cors:
             origin: '*'
             headers: ${self:custom.allowedHeaders}
-  get-basket:
-    handler: api/basket/index.get
-    description: GET basket
+  checkout-basket:
+    handler: api/basket/index.checkoutBasket
+    description: POST /basket/checkout
     events:
       - http:
-          path: basket
-          method: get
+          path: basket/checkout
+          method: post
           cors:
             origin: '*'
             headers: ${self:custom.allowedHeaders}
+    environment:
+      QUEUE_URL: ${construct:jobs.queueUrl}
   get-order:
     handler: api/ordering/index.getOrder
     description: GET order

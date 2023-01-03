@@ -2,12 +2,9 @@
 
 const AWS = require('aws-sdk')
 AWS.config.update({ region: 'us-east-1' })
-// const sqs = new AWS.SQS();
+const sqs = new AWS.SQS();
 
 const { EventBridgeClient, PutEventsCommand } = require('@aws-sdk/client-eventbridge')
-
-// const { EventBridgeClient } = require('@aws-sdk/client-eventbridge')
-// const { PutEventsCommand } = require('@aws-sdk/client-eventbridge')
 const ebClient = new EventBridgeClient({ region: 'us-east-1'})
 
 const dynamodb = new AWS.DynamoDB.DocumentClient()
@@ -32,25 +29,26 @@ module.exports = async (event) => {
     }  
 
     // 1- Get existing basket with items
+    console.log('1')
     const basket = await getBasket(userName);
-    // // 2- create an event json object with basket items, 
-    // // calculate totalprice, prepare order create json data to send ordering ms 
+    console.log('basket: ', basket)
+    // 2- create an event json object with basket items, 
+    // calculate totalprice, prepare order create json data to send ordering ms 
     var checkoutPayload = prepareOrderPayload(checkoutRequest, basket);
     
-    // console.log('QUEUE_URL: ',  process.env.QUEUE_URL)
-    // // 3- publish an event to eventbridge - this will subscribe by order microservice and start ordering process.
-    // // await sendCheckoutBasketSQS(checkoutPayload)
-    const resEvent = await publishCheckoutBasketEvent(checkoutPayload)                           
+    console.log('QUEUE_URL: ',  process.env.QUEUE_URL)
+    // 3- publish an event to eventbridge - this will subscribe by order microservice and start ordering process.
+    // await sendCheckoutBasketSQS(checkoutPayload)
+    const resEvent = await publishCheckoutBasketEvent(checkoutPayload)
     console.log('resEvent: ', resEvent)
 
-    // // 4- remove existing basket
+    // 4- remove existing basket
     await deleteBasket(event);
 
     return {
       statusCode: 200,
       headers: util.getResponseHeaders(),
-      // body: JSON.stringify(checkoutPayload)
-      body: JSON.stringify({checkoutPayload})
+      body: JSON.stringify(checkoutPayload)
     }
 
   } catch (err) {
@@ -123,24 +121,21 @@ const publishCheckoutBasketEvent = async (checkoutPayload) => {
   try {
       // eventbridge parameters for setting event to target system
       const params = {
-        Entries: [
-          {
-            Source: 'com.sls.basket.checkoutbasket',
-            Detail: JSON.stringify(checkoutPayload),
-            DetailType: 'CheckoutBasket',
-            Resources: [ ],
-            EventBusName: 'sls-event-bus'
-          },
-        ],
+          Entries: [
+              {
+                  Source: 'com.sls.basket.checkoutbasket',
+                  Detail: JSON.stringify(checkoutPayload),
+                  DetailType: 'CheckoutBasket',
+                  Resources: [ ],
+                  EventBusName: 'sls-event-bus'
+              },
+          ],
       };
-      console.log('params')
-      console.log(params);
    
       const data = await ebClient.send(new PutEventsCommand(params));
   
       console.log("Success, event sent; requestID:", data);
       return data;
-      // return '{}'
   
     } catch(e) {
       console.error(e);
@@ -148,16 +143,16 @@ const publishCheckoutBasketEvent = async (checkoutPayload) => {
   }
 }
 
-// const sendCheckoutBasketSQS = async (checkoutPayload) => {
-//   await sqs.sendMessage({
-//     QueueUrl: `https://sqs.us-east-1.amazonaws.com/656113873765/sls-order-land-dev-jobs`,
-//     // QueueUrl: process.env.QUEUE_URL, //prod
-//     MessageBody: JSON.stringify(checkoutPayload),
-//     MessageAttributes: {
-//       AttributeName: {
-//         StringValue: "Attribute Value",
-//         DataType: "String",
-//       },
-//     },
-//   }).promise()
-// }
+const sendCheckoutBasketSQS = async (checkoutPayload) => {
+  await sqs.sendMessage({
+    QueueUrl: `https://sqs.us-east-1.amazonaws.com/656113873765/sls-order-land-dev-jobs`,
+    // QueueUrl: process.env.QUEUE_URL, //prod
+    MessageBody: JSON.stringify(checkoutPayload),
+    MessageAttributes: {
+      AttributeName: {
+        StringValue: "Attribute Value",
+        DataType: "String",
+      },
+    },
+  }).promise()
+}

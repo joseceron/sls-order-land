@@ -1,11 +1,11 @@
 const add = require('./add-basket')
-const checkout = require('./checkout-basket')
+const getBasket = require('./get-basket')
 const del = require('./delete-basket')
-const get = require('./get-basket')
+const checkoutBasket = require('./checkout-basket')
 
 module.exports = {
   add,
-  checkout,
+  getBasket,
   del,
-  get
+  checkoutBasket
 }
