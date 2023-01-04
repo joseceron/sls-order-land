@@ -1,9 +1,6 @@
 const AWS = require('aws-sdk')
 AWS.config.update({ region: 'us-east-1' })
 
-// import { PutObjectCommand } from "@aws-sdk/client-s3"
-// import { s3Client } from '../libs/s3Client'
-// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 const { PutObjectCommand } = require('@aws-sdk/client-s3')
 const { s3Client } = require('../libs/s3Client')
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner")

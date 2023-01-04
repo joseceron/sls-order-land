@@ -24,6 +24,7 @@ provider:
   timeout: 5
   endpointType: REGIONAL
   environment:
+    REGION: us-east-1
     PRODUCT_TABLE: ${self:service}-${opt:stage, self:provider.stage}-product
     BASKET_TABLE: ${self:service}-${opt:stage, self:provider.stage}-basket
     ORDER_TABLE: ${self:service}-${opt:stage, self:provider.stage}-order
@@ -128,6 +129,16 @@ functions:
           cors:
             origin: '*'
             headers: ${self:custom.allowedHeaders}
+  import-file-parser:
+    handler: api/products/index.importFileParser
+    description: File parser event
+    events:
+      - s3:
+          bucket: ${self:provider.environment.BUCKET_NAME}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploaded/
+          existing: true
   get-products:
     handler: api/products/index.getProducts
     description: GET products

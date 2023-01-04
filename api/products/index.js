@@ -4,6 +4,7 @@ const getProduct = require('./get-product')
 const getProducts = require('./get-products')
 const update = require('./update-product')
 const importProductsFile = require('./import-products-file')
+const importFileParser = require('./import-file-parser')
 
 module.exports = {
   add,
@@ -11,5 +12,6 @@ module.exports = {
   getProduct,
   getProducts,
   update,
-  importProductsFile
+  importProductsFile,
+  importFileParser
 }
