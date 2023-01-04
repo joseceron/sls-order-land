@@ -14,6 +14,9 @@ custom:
     - X-Amz-User-Agent
     - app_user_id
     - app_user_name
+    - limit
+    - productId
+    - start
 frameworkVersion: '3'
 provider:
   name: aws

@@ -10,6 +10,10 @@ const tableName = process.env.PRODUCT_TABLE
 
 module.exports = async (event) => {
   try {
+    console.log('headers')
+    console.log(event.headers)
+    // const {limit, productId, start} = util.getPaginationParams(event.headers)
+    console.log('headers-------')
     const query = event.queryStringParameters
     const limit = query && query.limit ? parseInt(query.limit) : 5
 

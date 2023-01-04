@@ -16,9 +16,17 @@ const getResponseHeaders = () => {
   }
 }
 
+const getPaginationParams = (headers) => {
+  const limit = Number(headers.limit)
+  const start = Number(headers.start)
+  const productId = headers.productId
+  return { limit, start, productId}
+}
+
 module.exports = {
   getUserId,
   getUserName,
   getIdToken,
-  getResponseHeaders
+  getResponseHeaders,
+  getPaginationParams
 }
