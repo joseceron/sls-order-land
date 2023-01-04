@@ -3,11 +3,13 @@ const del = require('./delete-product')
 const getProduct = require('./get-product')
 const getProducts = require('./get-products')
 const update = require('./update-product')
+const importProductsFile = require('./import-products-file')
 
 module.exports = {
   add,
   del,
   getProduct,
   getProducts,
-  update
+  update,
+  importProductsFile
 }

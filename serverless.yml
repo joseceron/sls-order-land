@@ -28,6 +28,7 @@ provider:
     BASKET_TABLE: ${self:service}-${opt:stage, self:provider.stage}-basket
     ORDER_TABLE: ${self:service}-${opt:stage, self:provider.stage}-order
     COGNITO_IDENTITY_POOL_ID: us-east-1:1dc61573-21a6-4f0a-b14f-dc122b292f39
+    BUCKET_NAME: ${self:service}-${opt:stage, self:provider.stage}-uploaded
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -53,6 +54,14 @@ provider:
       Action:
         - events:PutEvents
       Resource: arn:aws:events:us-east-1:656113873765:event-bus/sls-event-bus
+    - Effect: Allow
+      Action: 
+        - s3:ListBucket
+      Resource: arn:aws:s3:::sls-order-land-dev-uploaded
+    - Effect: Allow
+      Action: 
+        - s3:*
+      Resource: arn:aws:s3:::sls-order-land-dev-uploaded/*
 constructs:
   jobs:
     type: queue
@@ -105,6 +114,16 @@ functions:
     events:
       - http:
           path: product/{productId}
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowedHeaders}
+  import-products-file:
+    handler: api/products/index.importProductsFile
+    description: GET import/
+    events:
+      - http:
+          path: import
           method: get
           cors:
             origin: '*'
@@ -245,6 +264,10 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+    UploadedBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.BUCKET_NAME} 
     GatewayResponseDefault4XX:
       Type: AWS::ApiGateway::GatewayResponse
       Properties:
