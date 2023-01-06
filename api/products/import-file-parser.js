@@ -12,9 +12,13 @@ module.exports = async(event) => {
     const s3 = new S3({ region: process.env.REGION })
     const promises = event.Records.map(record => {
       return new Promise((resolve, reject) => {
+        const keyName = decodeURIComponent(record.s3.object.key)
+        console.log(keyName)
+        
         const params = {
           Bucket: BUCKET_NAME,
-          Key: record.s3.object.key
+          // Key: record.s3.object.key
+          Key: keyName
         }
 
         const results = []
