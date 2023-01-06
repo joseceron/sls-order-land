@@ -10,25 +10,19 @@ const tableName = process.env.PRODUCT_TABLE
 
 module.exports = async (event) => {
   try {
-    console.log('headers')
     console.log(event.headers)
-    // const {limit, productId, start} = util.getPaginationParams(event.headers)
-    console.log('headers-------')
-    const query = event.queryStringParameters
-    const limit = query && query.limit ? parseInt(query.limit) : 5
-
+    let { limit, start, productId } = util.getPaginationParams(event.headers)
+    
     const params = {
       TableName: tableName,
       Limit: limit,
       ScanIndexForward: false // order item desc (sort key)
     }
 
-    let startTimestamp = query && query.start ? parseInt(query.start) : 0
-
-    if (startTimestamp > 0) {
+    if (start > 0) {
       params.ExclusiveStartKey = {
-        id: query.productId,
-        timestamp: startTimestamp
+        id: productId,
+        timestamp: start
       }
     }
     let data = await dynamodb.scan(params).promise()

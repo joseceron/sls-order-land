@@ -15,7 +15,7 @@ custom:
     - app_user_id
     - app_user_name
     - limit
-    - productId
+    - product_id
     - start
 frameworkVersion: '3'
 provider:

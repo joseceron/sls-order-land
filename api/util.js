@@ -17,9 +17,9 @@ const getResponseHeaders = () => {
 }
 
 const getPaginationParams = (headers) => {
-  const limit = Number(headers.limit)
-  const start = Number(headers.start)
-  const productId = headers.productId
+  const limit = headers && headers.limit ? parseInt(headers.limit) : 5
+  const start = headers && headers.start ? parseInt(headers.start) : 0
+  const productId = headers && headers.product_id ? headers.product_id : null
   return { limit, start, productId}
 }
 
