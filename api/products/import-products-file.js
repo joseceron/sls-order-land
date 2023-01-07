@@ -11,14 +11,22 @@ const BUCKET_NAME = process.env.BUCKET_NAME
 module.exports = async (event) => {
   try {
     const name = event.queryStringParameters.name
-
     const BUCKET = BUCKET_NAME;
-    const catalogPath = `uploaded/${name}`;
+    let catalogPath = `uploaded/${name}`;
+    let contentType = 'text/csv'
+    let sourceUrl = null
+
+    if(event.queryStringParameters.fileType && 
+      event.queryStringParameters.fileType == 'image') {
+      catalogPath = `images/${name}`;
+      contentType = 'image/jpg'
+      sourceUrl = `https://${BUCKET_NAME}.s3.amazonaws.com/${catalogPath}`
+    } 
 
     const params = {
       Bucket: BUCKET,
       Key: catalogPath,
-      ContentType: 'text/csv',
+      ContentType: contentType,
     }
 
     const command = new PutObjectCommand(params);
@@ -29,7 +37,8 @@ module.exports = async (event) => {
       statusCode: 200,
       headers: util.getResponseHeaders(),
       body: JSON.stringify({
-        url: signedUrl
+        url: signedUrl,
+        sourceUrl
       })
     }
   } catch (err) {

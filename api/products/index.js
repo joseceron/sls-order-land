@@ -13,5 +13,5 @@ module.exports = {
   getProducts,
   update,
   importProductsFile,
-  importFileParser
+  importFileParser,
 }
