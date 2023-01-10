@@ -1,0 +1,6 @@
+projectKey=sls-order-land
+serverUrl=http://localhost:9000
+serverVersion=9.8.0.63668
+dashboardUrl=http://localhost:9000/dashboard?id=sls-order-land
+ceTaskId=AYWdb6U6ouCf2aeIAwUi
+ceTaskUrl=http://localhost:9000/api/ce/task?id=AYWdb6U6ouCf2aeIAwUi
