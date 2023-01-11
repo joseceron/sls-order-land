@@ -19,7 +19,7 @@ module.exports = async (event) => {
       userName,
       items
     }
-    let data = await dynamodb.put({
+    await dynamodb.put({
       TableName: tableName,
       Item: item
     }).promise()

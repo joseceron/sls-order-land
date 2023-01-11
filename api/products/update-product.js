@@ -12,7 +12,7 @@ module.exports = async (event) => {
   try {
     let item = JSON.parse(event.body)
 
-    let data = await dynamodb.put({
+    await dynamodb.put({
       TableName: tableName,
       Item: item,
       ConditionExpression: 'id = :id AND #t = :t',
